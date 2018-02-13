@@ -5,23 +5,29 @@ DEFAULT_TO_BINARY_MODE = False
 
 class _FileTransformer(object):
     
+    @classmethod
+    def description(cls):
+        """The description to pass to the ArgumentParser"""
+        return None
+    
     def __init__(self,
             parser=None,
             args_to_parse=None,
             pre_parse_hook=None,
             post_parse_hook=None,
-            positional_args=True
+            positional_args=None,
             ):
-        self.parser = parser or argparse.ArgumentParser()
+        self.parser = parser or argparse.ArgumentParser(description=self.description())
 
         self.args_to_parse = args_to_parse
         
+        positional_args = True if positional_args is None else False
         if positional_args:
             self.parser.add_argument('files', nargs=argparse.REMAINDER)
         
         self.parser.add_argument('-i', '--input', metavar='FILE')
         self.parser.add_argument('-o', '--output', metavar='FILE')
-        self.parser.add_argument('-q', '--quiet', action='store_true')
+        self.parser.add_argument('-q', '--quiet', action='store_true', help="Suppress error messages")
         
         if pre_parse_hook:
             pre_parse_hook(self.parser)
