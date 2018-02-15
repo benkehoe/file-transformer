@@ -1,5 +1,6 @@
 import argparse
 import sys
+import six
 
 DEFAULT_TO_BINARY_MODE = False
 
@@ -16,6 +17,7 @@ class _FileTransformer(object):
             pre_parse_hook=None,
             post_parse_hook=None,
             positional_args=None,
+            parse_known_args=None,
             ):
         self.parser = parser or argparse.ArgumentParser(description=self.description())
 
@@ -32,19 +34,30 @@ class _FileTransformer(object):
         if pre_parse_hook:
             pre_parse_hook(self.parser)
         
-        self.args = self.parser.parse_args(args=args_to_parse)
+        if parse_known_args is None:
+            parse_known_args = (parser is None)
+        if parse_known_args:
+            self.args, remaining_args = self.parser.parse_known_args(args=args_to_parse)
+            self.args.remaining_args = remaining_args
+        else:
+            self.args = self.parser.parse_args(args=args_to_parse)
+        
         if not positional_args:
             self.args.files = []
+        
+        self.input = self.args.input
+        self.output = self.args.output
+        self.files = self.args.files
         
         if post_parse_hook:
             post_parse_hook(self.parser, self.args)
         
         self.verbose = not self.args.quiet
         
-        if len(self.args.files) >= 3:
+        if len(self.files) >= 3:
             self.exit(1, "Too many inputs!")
         
-        if self.args.files and (self.args.input or self.args.output):
+        if self.files and (self.input or self.output):
             self.exit(1, "Can't specify both args and options")
         
     def exit(self, code, message=None):
@@ -64,10 +77,10 @@ class _FileTransformer(object):
         if binary is None:
             binary = DEFAULT_TO_BINARY_MODE
         mode = 'rb' if binary else 'r'
-        if self.args.input:
-            input_stream = self._open_file(self.args.input, mode)
-        elif len(self.args.files) >= 1:
-            input_stream = self._open_file(self.args.files[0],mode)
+        if self.input:
+            input_stream = self._open_file(self.input, mode)
+        elif len(self.files) >= 1:
+            input_stream = self._open_file(self.files[0],mode)
         else:
             input_stream = sys.stdin
         return input_stream
@@ -76,10 +89,10 @@ class _FileTransformer(object):
         if binary is None:
             binary = DEFAULT_TO_BINARY_MODE
         mode = 'wb' if binary else 'w'
-        if self.args.output:
-            output_stream = self._open_file(self.args.output, mode)
-        elif len(self.args.files) == 2:
-            output_stream = self._open_file(self.args.files[1], mode)
+        if self.output:
+            output_stream = self._open_file(self.output, mode)
+        elif len(self.files) == 2:
+            output_stream = self._open_file(self.files[1], mode)
         else:
             output_stream = sys.stdout
         return output_stream
@@ -141,7 +154,8 @@ def main(processor,
         args=None,
         pre_parse_hook=None,
         post_parse_hook=None,
-        positional_args=True):
+        positional_args=None,
+        parse_known_args=None):
     """Setup the appropriate input and output based on the command line args and
     run the given callable processor. The basic arguments allow the program to be
     called in the following ways:
@@ -181,7 +195,8 @@ def main(processor,
         args_to_parse=args,
         pre_parse_hook=pre_parse_hook,
         post_parse_hook=post_parse_hook,
-        positional_args=positional_args)
+        positional_args=positional_args,
+        parse_known_args=parse_known_args)
     
     return xformer.run(processor, loader=loader, dumper=dumper)
 
@@ -190,7 +205,8 @@ def streaming_main(processor,
         args=None,
         pre_parse_hook=None,
         post_parse_hook=None,
-        positional_args=True):
+        positional_args=None,
+        parse_known_args=None):
     """Identical to main(), but the processor takes as input the file-like
     input stream and output stream, and the parsed args object."""
     
@@ -199,7 +215,8 @@ def streaming_main(processor,
         args_to_parse=args,
         pre_parse_hook=pre_parse_hook,
         post_parse_hook=post_parse_hook,
-        positional_args=positional_args)
+        positional_args=positional_args,
+        parse_known_args=parse_known_args)
     
     return xformer.stream(processor)
 
