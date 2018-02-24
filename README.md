@@ -1,6 +1,7 @@
-# file_transformer
+# file-transformer
+## Helping you turn one file into another
 
-A utility function for creating Python scripts that expect to turn one file
+Utility functions for creating Python scripts that expect to turn one file
 into another, or use stdin/stdout as part of a pipeline. The basic arguments 
 allow the program to be called in the following ways:
 
@@ -36,4 +37,4 @@ By default, the files are opened in text mode. If binary is desired,
 the module field DEFAULT_TO_BINARY_MODE can be set to true. If processor,
 loader, or dumper have an attribute named binary, that will be used instead.
 
-Errors are printed to stdout unless the -q flag is given.
+Errors are printed to stdout unless the `-q` flag is given.
