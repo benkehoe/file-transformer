@@ -49,7 +49,7 @@ class _FileTransformer(object):
             positional_args = not parse_known_args
         
         if positional_args:
-            self.parser.add_argument('files', nargs=argparse.REMAINDER)
+            self.parser.add_argument('files', nargs='*')
         
         self.parser.add_argument('-i', '--input', metavar='FILE')
         self.parser.add_argument('-o', '--output', metavar='FILE')
