@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 import argparse
 import sys
@@ -42,7 +42,12 @@ class _FileTransformer(object):
 
         self.args_to_parse = args_to_parse
         
-        positional_args = True if positional_args is None else False
+        if parse_known_args is None:
+            parse_known_args = False
+        
+        if positional_args is None:
+            positional_args = not parse_known_args
+        
         if positional_args:
             self.parser.add_argument('files', nargs=argparse.REMAINDER)
         
@@ -53,8 +58,6 @@ class _FileTransformer(object):
         if pre_parse_hook:
             pre_parse_hook(self.parser)
         
-        if parse_known_args is None:
-            parse_known_args = (parser is None)
         if parse_known_args:
             self.args, remaining_args = self.parser.parse_known_args(args=args_to_parse)
             self.args.remaining_args = remaining_args
