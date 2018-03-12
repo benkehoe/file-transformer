@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 import argparse
 import sys
@@ -271,4 +271,35 @@ def get_yaml_io(load_kwargs={}, dump_kwargs={}, safe=False, yamllib=None):
 
     loader, dumper = get_io_functions_from_lib(_get_lib(yamllib, 'yaml'), load_func_name, dump_func_name, load_kwargs=load_kwargs, dump_kwargs=dump_kwargs)
     dumper.binary = False
+    return loader, dumper
+
+def get_ordered_yaml_io(safe=False, yamllib=None, OrderedDict=None):
+    if not OrderedDict:
+        from collections import OrderedDict
+    yaml = _get_lib(yamllib, 'yaml')
+    
+    Loader = yaml.SafeLoader if safe else yaml.Loader
+    Dumper = yaml.SafeDumper if safe else yaml.Dumper
+    
+    def loader(input_stream, args):
+        class OrderedLoader(Loader):
+            pass
+        def constructor(loader, node):
+            loader.flatten_mapping(node)
+            return OrderedDict(loader.construct_pairs(node))
+        OrderedLoader.add_constructor(
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+            constructor)
+        return yaml.load(input_stream, OrderedLoader)
+    
+    def dumper(output, output_stream, args):
+        class OrderedDumper(Dumper):
+            pass
+        def representer(dumper, data):
+            return dumper.represent_mapping(
+                yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+                data.items())
+        OrderedDumper.add_representer(OrderedDict, representer)
+        return yaml.dump(output, output_stream, OrderedDumper)
+    
     return loader, dumper
